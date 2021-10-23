@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
 import json
-from datetime import date
 
 class StockanalyzerSpider(scrapy.Spider):
     name = 'stockanalyzer'
@@ -18,22 +17,72 @@ class StockanalyzerSpider(scrapy.Spider):
             callback=self.updateCompaniesWithProfile
         ) 
 
-        #print statement for testing
-        # for x,y in self.focused_companies.items():
-        #     print(x, ":" , y)    
-
     #initial request and filter for IPOs after 2020 and create dict for future work
     def initFocusedCompaniesDict(self, responseIpoDate):
         for object in responseIpoDate:
             ticker = object[0]
             ipoDate = object[1]
             if self.hasRecentIpo(ipoDate):
-                self.focused_companies[ticker] = {'ipoDate': ipoDate }
+                self.focused_companies[ticker] = FocusedCompany(ticker, ipoDate) 
 
     def hasRecentIpo(self, ipoDate):
         splitDateArr = ipoDate.split('/')
         return int(splitDateArr[2]) >= 2020
 
-    def updateCompaniesWithProfile(self, response):  
-        print(json.loads(response.body))  
-        data = response.get('data')
+    # second request kicked off from calback
+    def updateCompaniesWithProfile(self, response): 
+        jsonResponse = json.loads(response.body)
+        datas = jsonResponse.get('data')
+
+        for companyProfile in datas:
+            ticker = companyProfile.get('s')
+
+            if self.focused_companies.get(ticker) != None:
+                tempFocusedCompany = self.focused_companies.get(ticker)
+                
+                tempFocusedCompany.name = companyProfile.get('n')
+                tempFocusedCompany.current_stock_price = companyProfile.get('p')
+                tempFocusedCompany.market_cap = companyProfile.get('m')
+                tempFocusedCompany.sector = companyProfile.get('se')
+                tempFocusedCompany.pe_ratio = companyProfile.get('pe')
+
+                self.focused_companies[ticker] = tempFocusedCompany
+
+              
+
+
+                
+
+class FocusedCompany():
+    ticker = '' #got it!
+    name = '' #got it!
+    sector = '' #got it!
+    ipo_date = '' #got it!
+
+    market_cap = 0 #got it!
+    current_stock_price = 0.0 #got it!
+
+    revenue_last_year = 0 
+    revenue_current_quarter = 0
+    revenue_growth_rate_last_year = 0
+    revenue_growth_rate_current_quarter = 0
+
+    gross_profit_margin = 0
+    gross_profit = 0
+    margin_rate_last_year = 0 
+    net_income_loss_last_year = 0 
+
+    earnings_per_share = 0
+    total_outstanding_shares = 0
+    
+    ps_ratio = 0.0  
+    pe_ratio = 0.0 #got it!
+
+    def __init__(self, companyTicker, ipoDate):
+        self.ticker = companyTicker
+        self.ipo_date = ipoDate
+
+
+
+
+                

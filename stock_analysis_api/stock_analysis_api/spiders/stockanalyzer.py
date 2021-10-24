@@ -16,6 +16,10 @@ class StockanalyzerSpider(scrapy.Spider):
             url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=f',
             callback=self.updateCompaniesWithProfile
         ) 
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=profitMargin',
+            callback = self.updateCompaniesWithProfitMargin
+        )
 
     #initial request and filter for IPOs after 2020 and create dict for future work
     def initFocusedCompaniesDict(self, responseIpoDate):
@@ -46,9 +50,25 @@ class StockanalyzerSpider(scrapy.Spider):
                 tempFocusedCompany.sector = companyProfile.get('se')
                 tempFocusedCompany.pe_ratio = companyProfile.get('pe')
 
-                self.focused_companies[ticker] = tempFocusedCompany
+                self.focused_companies[ticker] = tempFocusedCompany    
+    
+    def updateCompaniesWithProfitMargin(self, response):
+        jsonResponse = json.loads(response.body)
+        for object in jsonResponse:
+            ticker = object[0]
+            
+            if (self.focused_companies.get(ticker) != None):
+                tempFocusedCompanyProfile = self.focused_companies.get(ticker)
+                tempFocusedCompanyProfile.gross_profit_margin = object[1]
 
-              
+        for x,y in self.focused_companies.items():
+            print(x, ":" , y.ipo_date)
+            print(x, ":" , str(y.name))
+            print(x, ":" , str(y.current_stock_price))
+            print(x, ":" , str(y.market_cap))
+            print(x, ":" , str(y.sector))
+            print(x, ":" , str(y.pe_ratio))    
+            print(x, ":", str(y.gross_profit_margin))
 
 
                 
@@ -62,12 +82,13 @@ class FocusedCompany():
     market_cap = 0 #got it!
     current_stock_price = 0.0 #got it!
 
+    total_revenue = 0
     revenue_last_year = 0 
     revenue_current_quarter = 0
     revenue_growth_rate_last_year = 0
     revenue_growth_rate_current_quarter = 0
 
-    gross_profit_margin = 0
+    gross_profit_margin = 0.0
     gross_profit = 0
     margin_rate_last_year = 0 
     net_income_loss_last_year = 0 

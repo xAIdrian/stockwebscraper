@@ -78,18 +78,80 @@ class StockanalyzerSpider(scrapy.Spider):
                 tempFocusedCompanyProfile = self.focused_companies.get(ticker)
                 tempFocusedCompanyProfile.gross_profit = object[1]
                 self.focused_companies[ticker] = tempFocusedCompanyProfile  
-                
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=sharesOut',
+            callback = self.updateCompaniesWithSharesOutstanding
+        )             
 
-        for x,y in self.focused_companies.items():
-            print(x, ":" , y.ipo_date)
-            print(x, ":" , str(y.name))
-            print(x, ":" , str(y.current_stock_price))
-            print(x, ":" , str(y.market_cap))
-            print(x, ":" , str(y.sector))
-            print(x, ":" , str(y.pe_ratio))    
-            print(x, ":", str(y.gross_profit_margin))   
-            print(x, ":", str(y.gross_profit))     
-                
+    def updateCompaniesWithSharesOutstanding(self, response):  
+        jsonResponse = json.loads(response.body)
+        for object in jsonResponse:
+            ticker = object[0]
+            
+            if (self.focused_companies.get(ticker) != None):
+                tempFocusedCompanyProfile = self.focused_companies.get(ticker)
+                tempFocusedCompanyProfile.total_shares_outstanding = object[1]
+                self.focused_companies[ticker] = tempFocusedCompanyProfile    
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=ps',
+            callback = self.updateCompaniesWithPsRatio
+        )   
+
+    def updateCompaniesWithPsRatio(self, response):    
+        jsonResponse = json.loads(response.body)
+        for object in jsonResponse:
+            ticker = object[0]
+            
+            if (self.focused_companies.get(ticker) != None):
+                tempFocusedCompanyProfile = self.focused_companies.get(ticker)
+                tempFocusedCompanyProfile.ps_ratio = object[1]
+                self.focused_companies[ticker] = tempFocusedCompanyProfile    
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=revenue',
+            callback = self.updateCompaniesWithRevenue
+        ) 
+
+    def updateCompaniesWithRevenue(self, response):   
+        jsonResponse = json.loads(response.body)
+        for object in jsonResponse:
+            ticker = object[0]
+            
+            if (self.focused_companies.get(ticker) != None):
+                tempFocusedCompanyProfile = self.focused_companies.get(ticker)
+                tempFocusedCompanyProfile.total_revenue = object[1]
+                self.focused_companies[ticker] = tempFocusedCompanyProfile 
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=revenueGrowth',
+            callback = self.updateCompaniesWithRevenueGrowth
+        )   
+
+    def updateCompaniesWithRevenueGrowth(self, response):
+        jsonResponse = json.loads(response.body)
+        for object in jsonResponse:
+            ticker = object[0]
+            
+            if (self.focused_companies.get(ticker) != None):
+                tempFocusedCompanyProfile = self.focused_companies.get(ticker)
+                tempFocusedCompanyProfile.revenue_growth_rate_last_year = object[1]
+                self.focused_companies[ticker] = tempFocusedCompanyProfile 
+        # yield scrapy.Request(
+        #     url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=revenueGrowth',
+        #     callback = self.updateCompaniesWithRevenueGrowth
+        # )                                     
+        
+        # for x,y in self.focused_companies.items():
+        #     print(x, ":" , str(y.name))
+        #     print(x, ":" , y.ipo_date)
+        #     print(x, ":" , str(y.current_stock_price))
+        #     print(x, ":" , str(y.market_cap))
+        #     print(x, ":" , str(y.sector))
+        #     print(x, ":" , str(y.pe_ratio))    
+        #     print(x, ":", str(y.gross_profit_margin))   
+        #     print(x, ":", str(y.gross_profit))     
+        #     print(x, ":", str(y.total_shares_outstanding))
+        #     print(x, ":", str(y.ps_ratio))  
+        #     print(x, ":", str(y.total_revenue))
+        #     print(x, ":", str(y.revenue_growth_rate_last_year))
 
 class FocusedCompany():
     ticker = '' #got it!
@@ -100,10 +162,10 @@ class FocusedCompany():
     market_cap = 0 #got it!
     current_stock_price = 0.0 #got it!
 
-    total_revenue = 0
+    total_revenue = 0 #got it!
     revenue_last_year = 0 
     revenue_current_quarter = 0
-    revenue_growth_rate_last_year = 0
+    revenue_growth_rate_last_year = 0.0 #got it
     revenue_growth_rate_current_quarter = 0
 
     gross_profit_margin = 0.0  #got it!
@@ -112,9 +174,9 @@ class FocusedCompany():
     net_income_loss_last_year = 0 
 
     earnings_per_share = 0
-    total_outstanding_shares = 0
+    total_shares_outstanding = 0 #got it!
     
-    ps_ratio = 0.0  
+    ps_ratio = 0.0  #got it!
     pe_ratio = 0.0 #got it!
 
     def __init__(self, companyTicker, ipoDate):

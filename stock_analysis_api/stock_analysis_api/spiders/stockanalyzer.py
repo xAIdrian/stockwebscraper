@@ -10,16 +10,11 @@ class StockanalyzerSpider(scrapy.Spider):
     focused_companies = dict()
 
     def parse(self, response):
-        self.initFocusedCompaniesDict(json.loads(response.body)) 
-        #main page companies profile request
+        self.initFocusedCompaniesDict(json.loads(response.body))
         yield scrapy.Request(
             url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=f',
             callback=self.updateCompaniesWithProfile
         ) 
-        yield scrapy.Request(
-            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=profitMargin',
-            callback = self.updateCompaniesWithProfitMargin
-        )
 
     #initial request and filter for IPOs after 2020 and create dict for future work
     def initFocusedCompaniesDict(self, responseIpoDate):
@@ -28,6 +23,8 @@ class StockanalyzerSpider(scrapy.Spider):
             ipoDate = object[1]
             if self.hasRecentIpo(ipoDate):
                 self.focused_companies[ticker] = FocusedCompany(ticker, ipoDate) 
+
+        
 
     def hasRecentIpo(self, ipoDate):
         splitDateArr = ipoDate.split('/')
@@ -48,9 +45,13 @@ class StockanalyzerSpider(scrapy.Spider):
                 tempFocusedCompany.current_stock_price = companyProfile.get('p')
                 tempFocusedCompany.market_cap = companyProfile.get('m')
                 tempFocusedCompany.sector = companyProfile.get('se')
-                tempFocusedCompany.pe_ratio = companyProfile.get('pe')
+                tempFocusedCompany.pe_ratio = companyProfile.get('pe')  
 
-                self.focused_companies[ticker] = tempFocusedCompany    
+                self.focused_companies[ticker] = tempFocusedCompany  
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=profitMargin',
+            callback = self.updateCompaniesWithProfitMargin
+        )        
     
     def updateCompaniesWithProfitMargin(self, response):
         jsonResponse = json.loads(response.body)
@@ -61,6 +62,24 @@ class StockanalyzerSpider(scrapy.Spider):
                 tempFocusedCompanyProfile = self.focused_companies.get(ticker)
                 tempFocusedCompanyProfile.gross_profit_margin = object[1]
 
+                self.focused_companies[ticker] = tempFocusedCompanyProfile  
+        yield scrapy.Request(
+            url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=grossProfit',
+            callback = self.updateCompaniesWithProfit
+        )
+        
+
+    def updateCompaniesWithProfit(self, response):
+        jsonResponse = json.loads(response.body)
+        for object in jsonResponse:
+            ticker = object[0]
+            
+            if (self.focused_companies.get(ticker) != None):
+                tempFocusedCompanyProfile = self.focused_companies.get(ticker)
+                tempFocusedCompanyProfile.gross_profit = object[1]
+                self.focused_companies[ticker] = tempFocusedCompanyProfile  
+                
+
         for x,y in self.focused_companies.items():
             print(x, ":" , y.ipo_date)
             print(x, ":" , str(y.name))
@@ -68,9 +87,8 @@ class StockanalyzerSpider(scrapy.Spider):
             print(x, ":" , str(y.market_cap))
             print(x, ":" , str(y.sector))
             print(x, ":" , str(y.pe_ratio))    
-            print(x, ":", str(y.gross_profit_margin))
-
-
+            print(x, ":", str(y.gross_profit_margin))   
+            print(x, ":", str(y.gross_profit))     
                 
 
 class FocusedCompany():
@@ -88,8 +106,8 @@ class FocusedCompany():
     revenue_growth_rate_last_year = 0
     revenue_growth_rate_current_quarter = 0
 
-    gross_profit_margin = 0.0
-    gross_profit = 0
+    gross_profit_margin = 0.0  #got it!
+    gross_profit = 0  #got it!
     margin_rate_last_year = 0 
     net_income_loss_last_year = 0 
 

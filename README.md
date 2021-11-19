@@ -18,3 +18,5 @@ It'll have a different name.
 Navigate to where you have your `scrapy.cfg` file, run:
 
 `scrapy crawl stockanalyzer`
+
+keep an eye out for a file name `stock_analyzer_dataset.csv`

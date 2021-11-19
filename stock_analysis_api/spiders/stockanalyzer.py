@@ -138,6 +138,7 @@ class StockanalyzerSpider(scrapy.Spider):
         
         for x, y in self.focused_companies.items():
             yield {
+                "ticker": y.ticker,
                 "name": y.name,
                 "ipo_date": y.ipo_date,
                 "current_stock_price": y.current_stock_price,
@@ -152,6 +153,7 @@ class StockanalyzerSpider(scrapy.Spider):
                 "revenue_growth_rate_last_year": y.revenue_growth_rate_last_year
             }
 
+#teset code, remove
         # for x,y in self.focused_companies.items():
         #     print(x, ":" , str(y.name))
         #     print(x, ":" , y.ipo_date)

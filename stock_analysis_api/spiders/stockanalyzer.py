@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import scrapy
 import json
+import dropbox
 
 class StockanalyzerSpider(scrapy.Spider):
     name = 'stockanalyzer'
     allowed_domains = ['www.stockanalysis.com', 'api.stockanalysis.com']
     start_urls = ['https://api.stockanalysis.com/wp-json/sa/screener?type=ipoDate']
+
+    dbx = dropbox.Dropbox('WHIlHZsrzNEAAAAAAAAAAYvdA74ktwIhGGOO_4TcOi-v_3pusfemBhlE6tMiF6FX')
+    dbx.users_get_current_account()
 
     focused_companies = dict()
 

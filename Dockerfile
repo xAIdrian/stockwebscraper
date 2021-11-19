@@ -8,12 +8,12 @@ COPY requirements.txt requirements.txt
 
 RUN export INSTALL_ON_LINUX=1
 
-RUN pip install Scrapy
-RUN pip install pymongo[srv]
-
 RUN pip install -r requirements.txt
 
 COPY . . 
 
-# do we need to run anaconda
-CMD [ "scrapy", "crawl", "stockanalyzer" ]
+CMD scrapy crawl stockanalyzer && curl -X POST https://content.dropboxapi.com/2/files/upload \
+    --header "Authorization: Bearer WHIlHZsrzNEAAAAAAAAAAYvdA74ktwIhGGOO_4TcOi-v_3pusfemBhlE6tMiF6FX" \
+    --header "Dropbox-API-Arg: {\"path\": \"/stock_analyzer_dataset.csv\"}" \
+    --header "Content-Type: application/octet-stream" \
+    --data-binary @stock_analyzer_dataset.csv

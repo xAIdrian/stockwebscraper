@@ -9,12 +9,13 @@ class StockanalyzerSpider(scrapy.Spider):
 
     focused_companies = dict()
 
+    #primary method that is called from scrapy library
     def parse(self, response):
         self.initFocusedCompaniesDict(json.loads(response.body))
         yield scrapy.Request(
             url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=f',
             callback=self.updateCompaniesWithProfile
-        ) 
+        )
 
     #initial request and filter for IPOs after 2020 and create dict for future work
     def initFocusedCompaniesDict(self, responseIpoDate):
@@ -133,12 +134,26 @@ class StockanalyzerSpider(scrapy.Spider):
             if (self.focused_companies.get(ticker) != None):
                 tempFocusedCompanyProfile = self.focused_companies.get(ticker)
                 tempFocusedCompanyProfile.revenue_growth_rate_last_year = object[1]
-                self.focused_companies[ticker] = tempFocusedCompanyProfile 
-        # yield scrapy.Request(
-        #     url=f'https://api.stockanalysis.com/wp-json/sa/screener?type=revenueGrowth',
-        #     callback = self.updateCompaniesWithRevenueGrowth
-        # )                                     
+                self.focused_companies[ticker] = tempFocusedCompanyProfile                                          
         
+        for x, y in self.focused_companies.items():
+            yield {
+                "ticker": y.ticker,
+                "name": y.name,
+                "ipo_date": y.ipo_date,
+                "current_stock_price": y.current_stock_price,
+                "market_cap": y.market_cap,
+                "sector": y.sector,
+                "pe_ratio": y.pe_ratio,    
+                "gross_profit_margin": y.gross_profit_margin,   
+                "gross_profit": y.gross_profit,     
+                "total_shares_outstanding": y.total_shares_outstanding,
+                "ps_ratio": y.ps_ratio,  
+                "total_revenue": y.total_revenue,
+                "revenue_growth_rate_last_year": y.revenue_growth_rate_last_year
+            }
+
+#teset code, remove
         # for x,y in self.focused_companies.items():
         #     print(x, ":" , str(y.name))
         #     print(x, ":" , y.ipo_date)
